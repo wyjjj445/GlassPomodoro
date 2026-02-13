@@ -1,0 +1,305 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>番茄钟 MVP</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="bg" id="bg"></div>
+  <div class="grain"></div>
+
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <div class="moreMenu" id="moreMenu" role="dialog" aria-modal="true" aria-label="更多功能" aria-hidden="true">
+    <div class="groupTitle">背景</div>
+    <div class="menuRow">
+      <div class="menuItem">
+        <div class="left">
+          <b>换一张背景</b>
+          <span>手动换（失败会自动切源）</span>
+        </div>
+        <div class="right">
+          <button id="refreshBgBtn">换背景</button>
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>下载当前背景</b>
+          <span id="downloadBgDesc">优先精确下载当前图像</span>
+        </div>
+        <div class="right">
+          <button id="downloadBgBtn">下载</button>
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>当前背景源</b>
+          <span>仅展示启用中的源</span>
+        </div>
+        <div class="right rightWide">
+          <div class="glassSelect" id="bgProviderDropdown">
+            <button
+              id="bgProviderTrigger"
+              class="glassSelectTrigger"
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span id="bgProviderTriggerText">请选择背景源</span>
+              <span class="glassSelectChevron">▾</span>
+            </button>
+            <div id="bgProviderMenu" class="glassSelectMenu" role="listbox" aria-hidden="true">
+              <div id="bgProviderMenuList"></div>
+            </div>
+          </div>
+          <button id="openSourceManagerBtn" class="primary">管理</button>
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>自动换背景</b>
+          <span id="autoBgDesc">每 3 分钟换一次</span>
+        </div>
+        <div class="right">
+          <button id="toggleAutoBgBtn">自动：关</button>
+          <input id="autoBgMin" class="miniInput" type="number" min="1" max="60" step="1" value="3" />
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>背景透明度</b>
+          <span id="bgOpacityDesc">当前 100%</span>
+        </div>
+        <div class="right rightWide">
+          <input id="bgOpacity" class="sliderInput" type="range" min="30" max="100" step="1" value="100" />
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>黑夜模式</b>
+          <span>更深色、更安静的观感</span>
+        </div>
+        <div class="right">
+          <button id="toggleNightBtn">黑夜模式：关</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="groupTitle">番茄钟</div>
+    <div class="menuRow">
+      <div class="menuItem">
+        <div class="left">
+          <b>自动切换工作/休息</b>
+          <span>一段结束后自动进入下一段</span>
+        </div>
+        <div class="right">
+          <button id="toggleAutoBtn">自动切换：开</button>
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>结束提示音</b>
+          <span>到点提醒（可关闭）</span>
+        </div>
+        <div class="right">
+          <button id="toggleSoundBtn">提示音：开</button>
+        </div>
+      </div>
+
+      <div class="menuItem">
+        <div class="left">
+          <b>时长设置</b>
+          <span>工作/短休/长休/长休周期</span>
+        </div>
+        <div class="right">
+          <button id="openSettingsBtn" class="primary">打开</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footerRow" style="margin-top: 6px; padding: 0 6px;">
+      <span class="mono">快捷键：空格 / R / N / I / D</span>
+      <span class="mono" id="bgTip"></span>
+    </div>
+  </div>
+
+  <div class="settingsModal" id="settingsModal" aria-hidden="true">
+    <div class="modalPanel" role="dialog" aria-modal="true" aria-label="时长设置">
+      <div class="modalHead">
+        <b>时长设置（分钟）</b>
+        <button class="modalClose" id="closeSettingsBtn">关闭</button>
+      </div>
+
+      <div class="settingsGrid">
+        <div class="field">
+          <label for="workM">工作</label>
+          <input id="workM" type="number" min="1" max="180" step="1" value="25" />
+        </div>
+        <div class="field">
+          <label for="shortM">短休</label>
+          <input id="shortM" type="number" min="1" max="60" step="1" value="5" />
+        </div>
+        <div class="field">
+          <label for="longM">长休</label>
+          <input id="longM" type="number" min="1" max="120" step="1" value="15" />
+        </div>
+        <div class="field">
+          <label for="longEvery">每几轮长休</label>
+          <input id="longEvery" type="number" min="2" max="12" step="1" value="4" />
+        </div>
+      </div>
+
+      <div class="footerRow">
+        <span class="mono">修改后会自动保存并重置当前段</span>
+        <span class="mono">Esc 可关闭</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sourceManagerModal" id="sourceManagerModal" aria-hidden="true">
+    <div class="modalPanel sourcePanel" role="dialog" aria-modal="true" aria-label="背景源管理">
+      <div class="modalHead">
+        <b>背景源管理</b>
+        <button class="modalClose" id="closeSourceManagerBtn">关闭</button>
+      </div>
+
+      <div class="panel">
+        <h3>新增背景源</h3>
+        <div class="settingsGrid sourceGrid">
+          <div class="field">
+            <label for="newSourceType">类型</label>
+            <input id="newSourceType" type="hidden" value="remote_image" />
+            <div class="glassSelect" id="newSourceTypeDropdown">
+              <button
+                id="newSourceTypeTrigger"
+                class="glassSelectTrigger"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
+                <span id="newSourceTypeTriggerText">远程图片直链</span>
+                <span class="glassSelectChevron">▾</span>
+              </button>
+              <div id="newSourceTypeMenu" class="glassSelectMenu" role="listbox" aria-hidden="true">
+                <div id="newSourceTypeMenuList"></div>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="newSourceName">名称</label>
+            <input id="newSourceName" type="text" placeholder="例如：我的壁纸源" />
+          </div>
+          <div class="field" id="newSourceUrlField">
+            <label for="newSourceUrl">URL</label>
+            <input id="newSourceUrl" type="url" placeholder="https://example.com/wallpaper.jpg" />
+          </div>
+          <div class="field" id="newSourceFileField" style="display:none;">
+            <label for="newSourceFile">本地图片</label>
+            <input id="newSourceFile" type="file" accept="image/*" />
+          </div>
+        </div>
+        <div class="footerRow">
+          <span class="mono">内置源不可删除，可改名与启用状态</span>
+          <button id="addSourceBtn" class="primary">新增</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:10px;">
+        <h3>源列表</h3>
+        <div id="sourceManagerList" class="sourceList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="topbar">
+        <div class="brand">
+          <b>番茄钟 MVP</b>
+          <span id="statusText">准备开始</span>
+        </div>
+
+        <div class="pillrow">
+          <button id="focusModeBtn" title="手动切换沉浸模式">沉浸模式</button>
+          <button id="moreBtn" class="primary" aria-haspopup="true" aria-expanded="false">更多 ▾</button>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="timerBox">
+          <div class="modeRow" role="tablist" aria-label="模式选择">
+            <button class="modeBtn" data-mode="work" aria-pressed="true">工作</button>
+            <button class="modeBtn" data-mode="short" aria-pressed="false">短休</button>
+            <button class="modeBtn" data-mode="long" aria-pressed="false">长休</button>
+          </div>
+
+          <div class="time" id="time">25:00</div>
+          <div class="sub">
+            <div>第 <b id="cycle">1</b> 轮（每 <b id="longEveryLabel">4</b> 轮长休）</div>
+            <div>背景源：<span class="mono" id="bgSource">加载中…</span></div>
+          </div>
+
+          <div class="progress" aria-label="进度">
+            <div class="bar" id="bar"></div>
+          </div>
+
+          <div class="controls">
+            <button class="primary" id="startPauseBtn">开始</button>
+            <button id="resetBtn">重置</button>
+            <button id="skipBtn" title="直接进入下一段">下一段</button>
+          </div>
+        </div>
+
+        <div class="side">
+          <div class="panel">
+            <h3>统计</h3>
+            <div class="kv">
+              <span>已完成工作段</span><b id="doneWork">0</b>
+              <span>已完成休息段</span><b id="doneBreak">0</b>
+              <span>当前模式</span><b id="modeName">工作</b>
+              <span>剩余时间</span><b id="remainText">25:00</b>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>任务</h3>
+            <div class="taskEditor">
+              <input id="currentTaskInput" type="text" placeholder="当前任务（例如：整理项目文档）" />
+              <div class="taskBtns">
+                <button id="saveTaskBtn" class="primary">保存任务</button>
+                <button id="clearTaskBtn">清空</button>
+                <button id="clearTaskHistoryBtn" title="清空任务历史">清空历史</button>
+              </div>
+            </div>
+            <div id="taskHistoryList" class="taskHistory"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footerRow">
+        <span>快捷键：空格开始/暂停，R 重置，N 下一段，I 沉浸模式，D 黑夜模式</span>
+        <span>长时间不操作会自动淡出 UI 以欣赏背景</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ambientClock" id="ambientClock" aria-live="polite">
+    <div class="ambientClockInner">
+      <div class="ambientMode" id="ambientMode">工作</div>
+      <div class="ambientTime" id="ambientTime">25:00</div>
+      <button id="exitFocusBtn" class="ghostBtn">退出沉浸</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
